@@ -1,11 +1,11 @@
-a = int(input('첫번째 숫자를 입력하시오:'))
-b = int(input('두번째 숫자를 입력하시오:'))
-c = int(input('세번째 숫자를 입력하시오:'))
+# a = int(input('첫번째 숫자를 입력하시오:'))
+# b = int(input('두번째 숫자를 입력하시오:'))
+# c = int(input('세번째 숫자를 입력하시오:'))
 
-result = a+b+c
-print(a, '+', b, '+', c, '=', result)
-result = a*b*c
-print(a, '*', b, '*', c, '=', result)
+# result = a+b+c
+# print(a, '+', b, '+', c, '=', result)
+# result = a*b*c
+# print(a, '*', b, '*', c, '=', result)
 
 
 
