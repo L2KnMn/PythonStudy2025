@@ -30,13 +30,13 @@ turtle.shape('turtle')
 
 
 red_turtle = turtle.Turtle()  
-red_turtle.shape('square')
+red_turtle.shape('turtle')
 red_turtle.pensize(pSize)
 blue_turtle = turtle.Turtle()
-blue_turtle.shape('triangle')
+blue_turtle.shape('turtle')
 blue_turtle.pensize(pSize)
 classic_turtle = turtle.Turtle()
-classic_turtle.shape('classic')
+classic_turtle.shape('turtle')
 classic_turtle.pensize(pSize)
 
 turtles = [red_turtle, blue_turtle, classic_turtle, turtle]
