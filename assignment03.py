@@ -30,7 +30,7 @@ turtle.pensize(pSize)
 turtle.tracer(0)  # 수동 화면 업데이트
 
 # 동적으로 생성할 거북이 인스턴스 수 입력받기
-num_turtles = 4
+num_turtles = 10
 
 # 거북이(발사자) 인스턴스 생성
 turtles = []
