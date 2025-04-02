@@ -1,24 +1,19 @@
-import turtle
+import random
 
-swidth, sheight = 800, 500
+cnts = 0
+times = 100000
 
-turtle.title('무지개색 원 그리기')
-turtle.setup(width=swidth+50, height=sheight+50)
-turtle.screensize(swidth, sheight)
+for i in range(times):
+    cnt = 0
+    numbers = []
 
-for radius in range(1, 250):
-    if radius % 6 == 0:
-        turtle.pencolor('red')
-    elif radius % 5 == 0:
-        turtle.pencolor('orange')
-    elif radius % 4 == 0:
-        turtle.pencolor('yellow')
-    elif radius % 3 == 0:
-        turtle.pencolor('green')
-    elif radius % 2 == 0:
-        turtle.pencolor('blue')
-    elif radius % 1 == 0:
-        turtle.pencolor('purple')
-    turtle.circle(radius)
+    for num in range(0, 100):
+        numbers.append(random.randrange(0, 100))
 
-turtle.done()
+    for num in range(0, 100):
+        if num not in numbers:
+            cnt+=1
+    cnts += cnt
+
+print(cnts / times)
+        
