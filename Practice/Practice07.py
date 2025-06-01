@@ -11,5 +11,3 @@ swidth, sheight = 500, 500
 for i in range(100):
     random.shuffle(shapeList)
     myTurtle = turtle.Turtle(shapeList[0])
-    tx = random.randint()
-

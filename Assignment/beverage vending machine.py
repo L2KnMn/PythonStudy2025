@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import messagebox, simpledialog
+from tkinter import messagebox
 
 class VendingMachineApp:
     def __init__(self, master):
@@ -25,15 +25,32 @@ class VendingMachineApp:
             "50원": 10
         }
         self.bills = {
+            "1만원": 0,
+            "5000원": 0,
             "1000원": 0
         }
+
+        self.money_unit_map = {
+            10000: "1만원",
+            5000: "5000원",
+            1000: "1000원",
+            500: "500원",
+            100: "100원",
+            50: "50원"
+        }
+
         self.current_deposit = 0  # 현재 투입된 금액
+        self.total_collected_money = 0
+        self.total_refilled_money = 0
 
         # 관리자 비밀번호 (임시)
         self.admin_password = "admin"
 
         self.create_widgets()
         self.update_display()
+
+    def profit(self):
+        return self.total_collected_money - self.total_refilled_money
 
     def create_widgets(self):
         # 상단 프레임 (잔액 표시 및 모드 선택)
@@ -77,14 +94,20 @@ class VendingMachineApp:
         self.transaction_frame.pack(fill="x", padx=10, pady=5)
 
         tk.Label(self.transaction_frame, text="금액 투입:", font=("Arial", 12)).pack(side="left", padx=5)
-        tk.Button(self.transaction_frame, text="1000원", command=lambda: self.insert_money(1000),
-                  font=("Arial", 10)).pack(side="left", padx=5)
-        tk.Button(self.transaction_frame, text="500원", command=lambda: self.insert_money(500), font=("Arial", 10)).pack(
-            side="left", padx=5)
-        tk.Button(self.transaction_frame, text="100원", command=lambda: self.insert_money(100), font=("Arial", 10)).pack(
-            side="left", padx=5)
-        tk.Button(self.transaction_frame, text="50원", command=lambda: self.insert_money(50), font=("Arial", 10)).pack(
-            side="left", padx=5)
+        # 지폐 버튼 생성
+        for key_str in self.bills.keys():
+            money_value = self.convert_from(key_str)  # convert_from 사용
+            if money_value is not None:  # 유효한 값인지 확인
+                tk.Button(self.transaction_frame, text=key_str,
+                          command=lambda current_value=money_value: self.insert_money(current_value),
+                          font=("Arial", 10)).pack(side="left", padx=5)
+        # 동전 버튼 생성
+        for key_str in self.coins.keys():
+            money_value = self.convert_from(key_str)  # convert_from 사용
+            if money_value is not None:  # 유효한 값인지 확인
+                tk.Button(self.transaction_frame, text=key_str,
+                          command=lambda current_value=money_value: self.insert_money(current_value),
+                          font=("Arial", 10)).pack(side="left", padx=5)
         tk.Button(self.transaction_frame, text="잔돈 반환", command=self.return_change, font=("Arial", 12),
                   bg="orange").pack(side="right", padx=5)
 
@@ -131,10 +154,16 @@ class VendingMachineApp:
             lbl.grid(row=i, column=1, padx=5, pady=2, sticky="ew")  # <--- sticky="ew" 추가
             self.money_labels[bill] = lbl
 
+        # 금액 수거 및 잔돈 보충 버튼
+        money_btn_row = max(len(self.coins), len(self.bills))
         tk.Button(money_frame, text="금액 수거", command=self.collect_money, font=("Arial", 10), bg="lightgray").grid(
-            row=max(len(self.coins), len(self.bills)), column=0, padx=5, pady=10, sticky="ew")
+            row=money_btn_row, column=0, padx=5, pady=10, sticky="ew")
         tk.Button(money_frame, text="잔돈 보충", command=self.refill_charge, font=("Arial", 10), bg="lightgray").grid(
-            row=max(len(self.coins), len(self.bills)), column=1, padx=5, pady=10, sticky="ew")
+            row=money_btn_row, column=1, padx=5, pady=10, sticky="ew")
+
+        # 총 수익 현황
+        self.profit_label = tk.Label(money_frame, text="총 수익: 0원", font=("Arial", 14, "bold"), fg="purple")
+        self.profit_label.grid(row=money_btn_row + 1, columnspan=2, pady=10, sticky="ew")
         self.toast_window = None
 
     def update_display(self):
@@ -147,43 +176,61 @@ class VendingMachineApp:
                 button.config(state="normal", text=f"{drink}\n({data['price']}원)", bg="lightgreen", fg="black")
             else:
                 button.config(state="disabled", text=f"{drink}\n({data['price']}원)", bg="lightgray", fg="black")
-
         # 관리자 모드 금액 현황 업데이트
         if hasattr(self, 'money_labels'):
-            for coin, count in self.coins.items():
-                self.money_labels[coin].config(text=f"{coin}: {count}개")
-            for bill, count in self.bills.items():
-                self.money_labels[bill].config(text=f"{bill}: {count}개")
+            self.update_admin_money_display()
 
-    def insert_money(self, amount):
-        if amount == 1000:
-            self.bills["1000원"] += 1
-        elif amount == 500:
-            self.coins["500원"] += 1
-        elif amount == 100:
-            self.coins["100원"] += 1
-        elif amount == 50:
-            self.coins["50원"] += 1
+    def convert_to(self, amount):
+        """
+        금액(정수)을 문자열 단위로 변환합니다.
+        """
+        unit = self.money_unit_map.get(amount)
+        if unit:
+            return unit
         else:
-            messagebox.showerror("오류", "유효하지 않은 금액입니다.")
-            return
+            self.show_toast_message(f"유효하지 않은 금액 단위입니다: {amount}", duration_ms=1500)
+            return None
 
-        self.current_deposit += amount
+    def convert_from(self, key):
+        """
+        문자열 단위를 금액(정수)으로 변환합니다.
+        (money_unit_map의 키-값 쌍을 뒤집어서 사용)
+        """
+        # money_unit_map의 값을 키로, 키를 값으로 하는 역방향 딕셔너리 생성 (필요할 때마다 생성)
+        # 또는 __init__에서 미리 만들어 둘 수도 있습니다.
+        reverse_map = {v: k for k, v in self.money_unit_map.items()}
+        value = reverse_map.get(key)
+        if value is not None:  # get()은 키가 없으면 None을 반환함
+            return value
+        else:
+            self.show_toast_message(f"유효하지 않은 금액 단위 문자열입니다: {key}", duration_ms=1500)
+            return 0  # 또는 None으로 반환하여 호출하는 쪽에서 에러 처리하도록 할 수도 있습니다.
+
+    def insert_money(self, value):
+        key = self.convert_to(value)
+        if key in self.coins.keys():
+            self.coins[key] += 1
+        elif key in self.bills.keys():
+            self.bills[key] += 1
+        else:
+            messagebox.showerror("오류", "유효하지 않은 금액이 투입되었습니다.")
+            return
+        self.current_deposit += value
         self.update_display()
 
-    def refill_charge(self):
+    def refill_charge(self, amount=10):
         for coin, count in self.coins.items():
-            self.coins[coin] += 10
+            self.coins[coin] += amount
+            self.total_refilled_money += self.convert_from(coin) * amount
+        self.show_toast_message(f"잔돈 {amount}개씩 보충되었습니다.", duration_ms=1500)
         self.update_display()
 
     def refill_drinks(self, amount=10):
         for drink_name in self.drinks:
             self.drinks[drink_name]["stock"] += amount
-
         self.show_toast_message(f"모든 음료 재고가 {amount}개씩 보충되었습니다.", duration_ms=1500)
         self.update_display()
-        self.load_admin_data()  # 관리자 모드의 재고 엔트리도 업데이트
-
+        self.load_admin_data()
 
     def purchase_drink(self, drink_name):
         drink_info = self.drinks.get(drink_name)
@@ -301,6 +348,11 @@ class VendingMachineApp:
             self.money_labels[coin].config(text=f"{coin}: {count}개")
         for bill, count in self.bills.items():
             self.money_labels[bill].config(text=f"{bill}: {count}개")
+        self.profit_label.config(text=f"총 수익: {self.profit()}원")
+        if self.profit() >= 0:
+            self.profit_label.config(fg="green")
+        else:
+            self.profit_label.config(fg="red")
 
     def update_stock(self):
         try:
@@ -317,13 +369,14 @@ class VendingMachineApp:
     def collect_money(self):
         total_collected = 0
         for coin, count in self.coins.items():
-            total_collected += (int(coin.replace("원", "")) * count)
+            total_collected += (self.convert_from(coin)  * count)
             self.coins[coin] = 0  # 수거 후 0으로 초기화
 
         for bill, count in self.bills.items():
-            total_collected += (int(bill.replace("원", "")) * count)
+            total_collected += (self.convert_from(bill) * count)
             self.bills[bill] = 0  # 수거 후 0으로 초기화
 
+        self.total_collected_money += total_collected
         self.show_toast_message(f"총 {total_collected}원이 수거되었습니다.")
         self.update_admin_money_display()
         self.update_display()  # 소비자 모드에도 영향 줄 수 있으므로 업데이트
