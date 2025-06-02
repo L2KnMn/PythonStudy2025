@@ -156,7 +156,6 @@ class VendingMachineApp:
                           font=("Malgun Gothic", 10)).grid(row=1, column=col_count, padx=3, pady=3)
                 col_count +=1
 
-        # 카드 투입/빼기 버튼 추가
         self.card_button = tk.Button(self.transaction_frame, text="카드 투입", 
                                      command=self.toggle_card, font=("Malgun Gothic", 10, "bold"), 
                                      bg="#4CAF50", fg="white", width=9, height=2, relief="raised", bd=2)
@@ -165,8 +164,9 @@ class VendingMachineApp:
         tk.Button(self.transaction_frame, text="잔돈\n반환", command=self.return_change, font=("Malgun Gothic", 12, "bold"),
                   bg="darkorange", fg="white", width=7, height=2, relief="raised", bd=3).pack(side="right", padx=20, pady=5)
 
+        # 관리자 모드 
         self.admin_frame = tk.Frame(self.master, bd=2, relief="groove", padx=10, pady=10)
-        # 이하 관리자 프레임 코드는 이전과 동일 (생략 가능하나, 완전한 코드를 위해 포함)
+
         tk.Label(self.admin_frame, text="--- 관리자 모드 ---", font=("Malgun Gothic", 16, "bold"), fg="red").pack(pady=10)
         stock_canvas_frame = tk.Frame(self.admin_frame); stock_canvas_frame.pack(fill="x", pady=5)
         stock_canvas = tk.Canvas(stock_canvas_frame, borderwidth=0, height=250)
@@ -182,19 +182,23 @@ class VendingMachineApp:
             tk.Label(item_frame, text=label_text, font=("Malgun Gothic", 10)).pack(side="left", padx=5)
             entry = tk.Entry(item_frame, width=7, font=("Malgun Gothic", 10)); entry.pack(side="left", padx=5)
             entry.insert(0, str(drink_info["stock"])); self.stock_entries[drink_info['id']] = entry
+        
         stock_btn_frame = tk.Frame(self.admin_frame); stock_btn_frame.pack(fill="x", pady=10)
         tk.Button(stock_btn_frame, text="재고 업데이트", command=self.update_stock, font=("Malgun Gothic", 10), bg="lightgray").pack(side="left", padx=10, expand=True, fill="x")
         tk.Button(stock_btn_frame, text="모든 음료 재고 10개로 보충", command=self.refill_all_drinks_to_10, font=("Malgun Gothic", 10), bg="lightgray").pack(side="left", padx=10, expand=True, fill="x")
+        
         money_frame = tk.LabelFrame(self.admin_frame, text="금액 현황 (자판기 보유)", padx=10, pady=10, font=("Malgun Gothic", 11)); money_frame.pack(fill="x", pady=5)
         self.money_labels = {}; money_display_frame = tk.Frame(money_frame); money_display_frame.pack(fill="x")
         bill_label_frame = tk.Frame(money_display_frame); bill_label_frame.pack(side="left", padx=10, fill="y", anchor="n")
         tk.Label(bill_label_frame, text="지폐:", font=("Malgun Gothic", 10, "underline")).pack(anchor="w")
         for i, (bill, count) in enumerate(self.bills.items()):
             lbl = tk.Label(bill_label_frame, text=f"{bill}: {count}개", font=("Malgun Gothic", 10)); lbl.pack(anchor="w", padx=5, pady=1); self.money_labels[bill] = lbl
+        
         coin_label_frame = tk.Frame(money_display_frame); coin_label_frame.pack(side="left", padx=10, fill="y", anchor="n")
         tk.Label(coin_label_frame, text="동전:", font=("Malgun Gothic", 10, "underline")).pack(anchor="w")
         for i, (coin, count) in enumerate(self.coins.items()):
             lbl = tk.Label(coin_label_frame, text=f"{coin}: {count}개", font=("Malgun Gothic", 10)); lbl.pack(anchor="w", padx=5, pady=1); self.money_labels[coin] = lbl
+        
         money_btn_frame = tk.Frame(money_frame); money_btn_frame.pack(fill="x", pady=10)
         tk.Button(money_btn_frame, text="금액 수거", command=self.collect_money, font=("Malgun Gothic", 10), bg="lightgray").pack(side="left", padx=10, expand=True, fill="x")
         tk.Button(money_btn_frame, text="잔돈 보충 (각 동전 10개씩)", command=self.refill_change_coins, font=("Malgun Gothic", 10), bg="lightgray").pack(side="left", padx=10, expand=True, fill="x")
@@ -302,6 +306,7 @@ class VendingMachineApp:
                 self.show_toast_message(f"카드 잔액이 부족합니다. (잔액: {self.card_balance:,}원)", duration_ms=2000, bg_color="orange")
                 return
             self.card_balance -= price
+            self.total_collected_money += price # 카드 판매액도 총 수익에 포함
             drink_info["stock"] -= 1
             self.show_toast_message(f"{drink_name} 카드로 구매 완료! (카드 잔액: {self.card_balance:,}원)", duration_ms=2000, bg_color="blue")
         else: # 현금 결제
