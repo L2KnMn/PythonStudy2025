@@ -400,7 +400,8 @@ class VendingMachineApp:
     def switch_to_admin_mode(self):
         self.customer_frame.pack_forget()
         self.admin_frame.pack(fill="both", expand=True, padx=10, pady=5)
-        self.load_admin_data(); self.update_display()
+        self.load_admin_data()
+        self.update_display()
 
     def load_admin_data(self):
         for drink_id, entry in self.stock_entries.items():
@@ -447,15 +448,10 @@ class VendingMachineApp:
         for bill_name, count in self.bills.items():
             bill_value = self.convert_from(bill_name)
             if bill_value > 0: collected_this_time += bill_value * count; self.bills[bill_name] = 0
-        # 카드 판매액은 이미 purchase_drink에서 self.total_collected_money에 반영되었으므로,
-        # 여기서는 현금 수거액만 self.total_collected_money에 더하는 것이 아니라,
-        # 현금으로 투입되어 아직 수익으로 잡히지 않은 금액을 반영하는 개념으로 이해해야 합니다.
-        # 현재 구조에서는 현금 투입(current_deposit) -> 구매 시 차감 -> 남은 금액 반환 or 수거 시 수익.
-        # collect_money는 자판기 내 "현금"을 수거하는 것이므로, collected_this_time을
-        # total_collected_money에 더하는 기존 로직이 맞습니다.
-        # (단, purchase_drink에서 현금 구매 시 total_collected_money를 즉시 올리지 않았다는 가정 하에)
-        # 만약 purchase_drink에서 현금 구매 시에도 total_collected_money를 올렸다면, 여기서 중복됩니다.
-        # 현재 코드는 purchase_drink 현금 구매 시 total_collected_money를 직접 올리지 않으므로, 아래 로직 유지.
+        # 카드 판매액은 이미 purchase_drink에서 self.total_collected_money에 반영
+        # 투입되어 있는 현금을 재고에서 빼서 수익에 더하는 개념
+        # 현재 구조는 현금 투입(current_deposit) -> 구매 시 차감 -> 남은 금액 반환 or 수거 시 수익.
+        # 만약 purchase_drink에서 현금 구매 시에도 total_collected_money를 올렸다면, 중복되므로 이 기능을 삭제하던가 아래의 금액 증가 로직을 삭제
         self.total_collected_money += collected_this_time
         self.show_toast_message(f"총 {collected_this_time:,}원 수거. (누적 수익 업데이트됨)", duration_ms=2000)
         self.update_admin_money_display(); self.update_display()
