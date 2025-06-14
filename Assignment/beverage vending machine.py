@@ -237,8 +237,11 @@ class VendingMachineApp:
     def toggle_card(self):
         self.card_inserted = not self.card_inserted
         if self.card_inserted:
-            self.card = self.users_card        
-        if self.card is None:
+            self.card = self.users_card
+        else:
+            self.card = None
+
+        if self.card is not None:
             self.card_button.config(text="카드 빼기", bg="#F44336")
             self.show_toast_message(f"카드가 투입되었습니다. 카드 잔액: {self.card.moeny:,}원", duration_ms=2000)
         else:
